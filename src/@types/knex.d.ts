@@ -12,6 +12,7 @@ declare module 'knex/types/tables' {
   export interface Tables {
     users: {
       id: string
+      session_id: string
       name: string
       email: string
       metrics: {
@@ -23,12 +24,22 @@ declare module 'knex/types/tables' {
 
       meals:
         | {
+            id: string
             meal_name: string
             description: string
-            created_at: string
-            isInDiet: boolean
+            meal_hour: string
+            is_in_diet: boolean
           }[]
         | null
+    }
+
+    meals: {
+      id: string
+      session_id: string
+      meal_name: string
+      description: string
+      meal_hour: string
+      is_in_diet: boolean
     }
   }
 }
