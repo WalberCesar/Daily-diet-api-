@@ -5,7 +5,6 @@ export async function up(knex: Knex): Promise<void> {
     table.uuid('id').primary()
     table.string('meal_name').notNullable()
     table.string('description').notNullable()
-    table.string('meal_hour').notNullable()
     table.boolean('is_in_diet')
   })
 }

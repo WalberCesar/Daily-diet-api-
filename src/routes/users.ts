@@ -1,3 +1,5 @@
+/* eslint-disable no-var */
+/* eslint-disable eqeqeq */
 import { FastifyInstance } from 'fastify'
 import { knex } from '../database'
 import { randomUUID } from 'crypto'
@@ -19,17 +21,32 @@ export async function userRoutes(app: FastifyInstance) {
     const getAllMealsOfUser = await knex('meals')
       .select('*')
       .where('session_id', sessionId)
-    const totalMealsRegistred = getAllMealsOfUser.length
 
-    const metrics = getAllMealsOfUser.map((meal) => {
-      let totalMealsInDiet = 0
-      const totalMealsOutDiet = 0
-      if (meal.is_in_diet === true) {
-        return (totalMealsInDiet = totalMealsInDiet + 1)
-      } else {
-        return totalMealsInDiet
-      }
-    })
+    var bestSequencyOfMeals = <string[]>[]
+    var metrics = getAllMealsOfUser.reduce(
+      (acc, meal, index) => {
+        if (meal.is_in_diet == true) {
+          acc.totalMealsInDiet++
+          bestSequencyOfMeals.push(meal.meal_name)
+
+          if (bestSequencyOfMeals.length > acc.bestSequency.length) {
+            acc.bestSequency = bestSequencyOfMeals
+          }
+        } else {
+          acc.totalMealsOutDiet++
+          acc.bestSequency = bestSequencyOfMeals
+          bestSequencyOfMeals = []
+        }
+        console.log(acc.bestSequency)
+        return acc
+      },
+      {
+        totalMealsregistred: getAllMealsOfUser.length,
+        totalMealsInDiet: 0,
+        totalMealsOutDiet: 0,
+        bestSequency: <string[]>[],
+      },
+    )
 
     console.log(metrics)
   })
