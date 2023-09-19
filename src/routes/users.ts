@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /* eslint-disable no-var */
 /* eslint-disable eqeqeq */
 import { FastifyInstance } from 'fastify'
@@ -22,33 +23,44 @@ export async function userRoutes(app: FastifyInstance) {
       .select('*')
       .where('session_id', sessionId)
 
-    var bestSequencyOfMeals = <string[]>[]
+    var bestSequencyOfMeals = <object[]>[]
     var metrics = getAllMealsOfUser.reduce(
-      (acc, meal, index) => {
+      (acc, meal) => {
         if (meal.is_in_diet == true) {
           acc.totalMealsInDiet++
-          bestSequencyOfMeals.push(meal.meal_name)
+          const { meal_name, description, meal_hour } = meal
+          bestSequencyOfMeals.push({
+            meal_name,
+            description,
+            meal_hour,
+          })
 
           if (bestSequencyOfMeals.length > acc.bestSequency.length) {
             acc.bestSequency = bestSequencyOfMeals
           }
         } else {
           acc.totalMealsOutDiet++
-          acc.bestSequency = bestSequencyOfMeals
           bestSequencyOfMeals = []
         }
-        console.log(acc.bestSequency)
+
         return acc
       },
       {
         totalMealsregistred: getAllMealsOfUser.length,
         totalMealsInDiet: 0,
         totalMealsOutDiet: 0,
-        bestSequency: <string[]>[],
+        bestSequency: <object[]>[],
       },
     )
 
-    console.log(metrics)
+    const [user] = await knex('users')
+      .select('name')
+      .where('session_id', sessionId)
+
+    return {
+      user,
+      metrics,
+    }
   })
 
   app.get('/:id', async (request, reply) => {

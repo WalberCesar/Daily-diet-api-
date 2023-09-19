@@ -67,8 +67,9 @@ export async function mealsRoutes(app: FastifyInstance) {
     })
 
     const { id } = getIdSchema.parse(request.params)
+    const { session_id } = request.cookies
 
-    await knex('meals').delete('*').where('id', id)
+    await knex('meals').delete('*').where({ id, session_id })
 
     return reply.status(201).send()
   })
@@ -89,8 +90,16 @@ export async function mealsRoutes(app: FastifyInstance) {
     })
 
     const { id } = getIdSchema.parse(request.params)
+    // const sessionId = await knex('meals')
+    //   .select('session_id')
+    //   .where('id', id)
+    //   .then((response) => {
+    //     return response[0].session_id
+    //   })
 
-    await knex('meals').where('id', id).update({
+    const { session_id } = request.cookies
+
+    await knex('meals').where({ id, session_id }).update({
       description,
       is_in_diet,
       meal_hour,
