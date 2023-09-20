@@ -5,112 +5,99 @@ import { FastifyInstance } from 'fastify'
 import { knex } from '../database'
 import { randomUUID } from 'crypto'
 import { z } from 'zod'
+import { checkSessionIdExists } from '../middlawares/check-exists-session-id'
 
 export async function userRoutes(app: FastifyInstance) {
-  app.get('/:id/metrics', async (request, reply) => {
-    const getUserParamsSchema = z.object({
-      id: z.string().uuid(),
-    })
-
-    const { id } = getUserParamsSchema.parse(request.params)
-    const [getSessionId] = await knex('users')
-      .select('session_id')
-      .where('id', id)
-
-    const sessionId = getSessionId.session_id
-
-    const getAllMealsOfUser = await knex('meals')
-      .select('*')
-      .where('session_id', sessionId)
-
-    var bestSequencyOfMeals = <object[]>[]
-    var metrics = getAllMealsOfUser.reduce(
-      (acc, meal) => {
-        if (meal.is_in_diet == true) {
-          acc.totalMealsInDiet++
-          const { meal_name, description, meal_hour } = meal
-          bestSequencyOfMeals.push({
-            meal_name,
-            description,
-            meal_hour,
-          })
-
-          if (bestSequencyOfMeals.length > acc.bestSequency.length) {
-            acc.bestSequency = bestSequencyOfMeals
-          }
-        } else {
-          acc.totalMealsOutDiet++
-          bestSequencyOfMeals = []
-        }
-
-        return acc
-      },
-      {
-        totalMealsregistred: getAllMealsOfUser.length,
-        totalMealsInDiet: 0,
-        totalMealsOutDiet: 0,
-        bestSequency: <object[]>[],
-      },
-    )
-
-    const [user] = await knex('users')
-      .select('name')
-      .where('session_id', sessionId)
-
-    return {
-      user,
-      metrics,
-    }
-  })
-
-  app.get('/:id', async (request, reply) => {
-    const getUserParamsSchema = z.object({
-      id: z.string().uuid(),
-    })
-
-    const { id } = getUserParamsSchema.parse(request.params)
-    const [getSessionId] = await knex('users')
-      .select('session_id')
-      .where('id', id)
-
-    const sessionId = getSessionId.session_id
-
-    const getAllMealsOfUser = await knex('meals')
-      .select('*')
-      .where('session_id', sessionId)
-
-    if (getAllMealsOfUser.length <= 0) {
-      return reply.send({
-        message: 'Não há refeições cadastradas',
+  app.get(
+    '/:id/metrics',
+    {
+      preHandler: [checkSessionIdExists],
+    },
+    async (request, reply) => {
+      const getUserParamsSchema = z.object({
+        id: z.string().uuid(),
       })
-    } else {
-      return getAllMealsOfUser
-    }
-  })
 
-  app.get('/', async () => {
-    const table = await knex('users').select('')
-    return {
-      table,
-    }
-  })
+      const { id } = getUserParamsSchema.parse(request.params)
+      const [getSessionId] = await knex('users')
+        .select('session_id')
+        .where('id', id)
 
-  app.delete('/', async (request, reply) => {
-    await knex('users').delete('*')
-    return reply.status(201).send()
-  })
+      const sessionId = getSessionId.session_id
 
-  // app.get('/:id', async (request, reply) => {
-  //   const getUserParamsSchema = z.object({
-  //     id: z.string().uuid(),
-  //   })
+      const getAllMealsOfUser = await knex('meals')
+        .select('*')
+        .where('session_id', sessionId)
 
-  //   const { id } = getUserParamsSchema.parse(request.params)
+      var bestSequencyOfMeals = <object[]>[]
+      var metrics = getAllMealsOfUser.reduce(
+        (acc, meal) => {
+          if (meal.is_in_diet == true) {
+            acc.totalMealsInDiet++
+            const { meal_name, description, meal_hour } = meal
+            bestSequencyOfMeals.push({
+              meal_name,
+              description,
+              meal_hour,
+            })
 
-  //   const user = await knex('users').select('*').where('id', id)
+            if (bestSequencyOfMeals.length > acc.bestSequency.length) {
+              acc.bestSequency = bestSequencyOfMeals
+            }
+          } else {
+            acc.totalMealsOutDiet++
+            bestSequencyOfMeals = []
+          }
 
-  //   return user
-  // })
+          return acc
+        },
+        {
+          totalMealsregistred: getAllMealsOfUser.length,
+          totalMealsInDiet: 0,
+          totalMealsOutDiet: 0,
+          bestSequency: <object[]>[],
+        },
+      )
+
+      const [user] = await knex('users')
+        .select('name')
+        .where('session_id', sessionId)
+
+      return {
+        user,
+        metrics,
+      }
+    },
+  )
+
+  app.get(
+    '/:id',
+    { preHandler: [checkSessionIdExists] },
+    async (request, reply) => {
+      const getUserParamsSchema = z.object({
+        id: z.string().uuid(),
+      })
+
+      const { id } = getUserParamsSchema.parse(request.params)
+      const [getSessionId] = await knex('users')
+        .select('session_id')
+        .where('id', id)
+
+      const sessionId = getSessionId.session_id
+
+      const getAllMealsOfUser = await knex('meals')
+        .select('*')
+        .where('session_id', sessionId)
+
+      if (getAllMealsOfUser.length <= 0) {
+        return reply.send({
+          message: 'Não há refeições cadastradas',
+        })
+      } else {
+        return getAllMealsOfUser
+      }
+    },
+  )
 
   app.post('/', async (request, reply) => {
     const createUserBodySchema = z.object({
